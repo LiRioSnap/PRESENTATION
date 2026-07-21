@@ -27,7 +27,8 @@
 
 .reveal .slides section {
   text-align: left;
-  padding-top: 0.1em;
+  height: 100%;
+  top: 0;
 }
 
 .reveal h1 {
@@ -69,7 +70,9 @@
 
 .reveal blockquote {
   border-left: 6px solid #EA528D;
-  padding-left: 1rem;
+  width: 70%;
+  padding: 0.1em 0.5em;
+  margin: 0.2em auto;
 }
 
 .reveal .progress span {

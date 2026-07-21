@@ -120,7 +120,7 @@ The aim will be to go through these sections alongside some questions in order t
             <h2>How things work</h2>
 <p><strong>Drivers, Executors, and Partitions</strong></p>
 <blockquote class="fragment">
-<p>Drivers orchestrate and collect all the results back together at the end</p>
+<p>Drivers orchestrate tasks and collect all the results back together at the end</p>
 </blockquote>
 <p class="fragment">There is typically one driver node</p>
 <blockquote class="fragment">
@@ -130,16 +130,24 @@ The aim will be to go through these sections alongside some questions in order t
 <blockquote class="fragment">
 <p>Partitions are the chunks of data that tasks get performed on</p>
 </blockquote>
-<p class="fragment">The data will already have been paritioned before our job</p>
+<p class="fragment">The data will already have been partitioned before our job</p>
 
             </section>
         
             <section >
                 <h2>Very high level analogy</h2>
-<p>I am a CEO of a big (but very old fashioned) company and I want to know how many sales we made this year and need to report this to my shareholders. I keep my data in log books on shelves in my office. There is a log book per week.</p>
+<p>I am a CEO of a big (but very old fashioned) company. I want to know how many sales we made this year and need to report this to my shareholders.  I keep my data in log books on shelves in my office. There is a log book per month.  I have 3 employees, Jake, Yusuf, and Natthaya</p>
+<p>I tell Jake to add up the total for the first 4 months. I tell Yusuf to add up the total for months 5-8 and Natthaya to add up the total for months 9-12.</p>
 <blockquote>
-<p>I am the driver and so I sat back and assign each of my employees</p>
+<p>I am the driver</p>
 </blockquote>
+<blockquote>
+<p>Jake, Yusuf, and Natthaya are my executors</p>
+</blockquote>
+<blockquote>
+<p>Each log book (for a given week) is a partition</p>
+</blockquote>
+<p>Each of my executors reports their number back to me. I add them up and report that number to my stakeholders.</p>
 
             </section>
         
@@ -219,12 +227,6 @@ The aim will be to go through these sections alongside some questions in order t
             <section >
                 <h2>Problem</h2>
 <p>Let’s suppose we want a new table which shows how much money we have made off each product.</p>
-<ul>
-<li>Join the two tables on PRODUCT_ID</li>
-<li>Group the new table by PRODUCT_ID</li>
-<li>Aggregate by summing up</li>
-<li>Collect this new table into</li>
-</ul>
 <pre><code class="language-python">from pyspark.sql import functions as F
 
 orders = spark.table(&quot;fct_orders&quot;)
@@ -240,11 +242,12 @@ result = (
     .collect()
 )
 </code></pre>
+<p>Let’s consider how this actually gets executed.</p>
 
             </section>
         
             <section >
-                <h2>What bits do what?</h2>
+                <p>The data in the orders table will most likely be partitioned by ORDER_ID. The data in the product table will most likely be partitioned by PRODUCT_ID.</p>
 
             </section>
         
