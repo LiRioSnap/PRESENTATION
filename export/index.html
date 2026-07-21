@@ -248,6 +248,40 @@ result = (
         
             <section >
                 <p>The data in the orders table will most likely be partitioned by ORDER_ID. The data in the product table will most likely be partitioned by PRODUCT_ID.</p>
+<p>This means an order for <code>PRODUCT_ID = 2</code> and the row describing <code>PRODUCT_ID = 2</code> in <code>DIM_PRODUCTS</code> could easily sit on two different executors — Spark has no reason to have kept them together.</p>
+
+            </section>
+        
+            <section >
+                <h2>The join forces a shuffle</h2>
+<p>To join on <code>product_id</code>, every row from both tables needs to be compared against rows with the same key. Spark can’t do that if matching rows are scattered across different executors.</p>
+<p>So before the join can happen, Spark <strong>shuffles</strong> the data: it hashes <code>product_id</code> on both tables and redistributes rows across the cluster so that all rows sharing a <code>product_id</code> end up on the same executor.</p>
+<p>This is a network operation — data physically moves machine to machine. It’s usually the most expensive part of a query like this.</p>
+
+            </section>
+        
+            <section >
+                <h2>The groupBy needs the same thing</h2>
+<p><code>groupBy(&quot;product_id&quot;)</code> has the same requirement: to sum <code>COST</code> per product, every row for a given <code>product_id</code> has to be summed on the same executor.</p>
+<p>If the shuffle from the join already grouped rows by <code>product_id</code>, Spark can often reuse that partitioning. If not, it triggers a second shuffle.</p>
+<p>Either way — the driver isn’t doing this work. It’s the executors, exchanging data with each other, that carry out the shuffle and compute each partial sum.</p>
+
+            </section>
+        
+            <section >
+                <h2>Who does what</h2>
+<ul>
+<li><strong>Driver</strong> — reads your Python code and builds the plan (this join, then this groupBy, then this agg). It doesn’t touch a single row of data itself.</li>
+<li><strong>Executors</strong> — hold the actual partitions of <code>fct_orders</code> and <code>dim_products</code>, perform the shuffle, and compute the per-product sums in parallel.</li>
+<li><strong>Partitions</strong> — the chunks of data being moved and processed. A partition never splits across executors; it’s reassigned as a whole when the shuffle happens.</li>
+</ul>
+
+            </section>
+        
+            <section >
+                <h2>collect() brings it back to the driver</h2>
+<p>Once every executor has computed its slice of <code>total_amount</code> per <code>product_id</code>, <code>.collect()</code> tells them to send those results back to the driver, which assembles them into a single Python list.</p>
+<p>This only works because the <em>result</em> — one row per product — is small. If we tried to <code>.collect()</code> the joined <code>orders</code> + <code>products</code> table before aggregating, we’d be asking the driver to hold every order row in its own memory, which is a common way to crash a Spark job.</p>
 
             </section>
         
