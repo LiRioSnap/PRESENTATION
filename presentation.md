@@ -15,21 +15,14 @@ revealOptions:
 **Troubleshooting, optimisation, and monitoring**
 
 ### Plan:
-- A little bit on how things work {.fragment}
-    - Driver vs Executor vs Partitions
+- Drivers, Executors, Partitions {.fragment}
+    - What they are
+    - High level analogy
+    - Code based example
 - Basic optimisations {.fragment}
     - Liquid Clustering
     - AQE    
     - Broadcast join
-- Common errors {.fragment}
-    - Data skew
-    - Shuffling
-    - Disk Spilling
-- Diagnosing failures {.fragment}
-    - Startup
-    - Library
-    - OOM
-- Working through an example {.fragment}
 - Past paper questions {.fragment}
 
 ---
@@ -181,15 +174,15 @@ So before the join can happen, Spark **shuffles** the data: it redistributes row
 
 If the shuffle from the join already grouped rows by `product_id`, Spark can often reuse that partitioning. If not, it triggers a second shuffle.
 
-Either way — the driver isn't doing this work. It's the executors, exchanging data with each other, that carry out the shuffle and compute each partial sum.
+Either way the driver isn't doing this work. It's the executors, exchanging data with each other, that carry out the shuffle and compute each partial sum.
 
 --
 
 ## Who does what
 
-- **Driver** — reads your Python code and builds the plan (this join, then this groupBy, then this agg). It doesn't touch a single row of data itself.
-- **Executors** — hold the actual partitions of `fct_orders` and `dim_products`, perform the shuffle, and compute the per-product sums in parallel.
-- **Partitions** — the chunks of data being moved and processed. A partition never splits across executors; it's reassigned as a whole when the shuffle happens.
+- **Driver** reads your Python code and builds the plan (this join, then this groupBy, then this agg). It doesn't touch a single row of data itself.
+- **Executors** hold the actual partitions of `fct_orders` and `dim_products`, perform the shuffle, and compute the per product sums in parallel.
+- **Partitions** the chunks of data being moved and processed. A partition never splits across executors; it's reassigned as a whole when the shuffle happens.
 
 --
 
@@ -207,10 +200,9 @@ Once every executor has computed its slice of `total_amount` per `product_id`, `
 
 ## Optimisations
 
-**Liquid clustering:**
+**Liquid clustering:** 
 
 A predictive optimisation which updates clustering keys based on query patterns.
-
 
 **AQE (Adaptive Query Execution):**
 
@@ -218,7 +210,7 @@ Databricks can change the way your queries execute when it thinks it could help.
 
 **Broadcast joins:**
 
-Suppose we have a join which needs to happen between a big table and a very small table. Rather than having to shuffle around a lot of data instead we could create copies of the small table and send a copy to each executor (we **broadcast** the small table to the executors) this will speed up the join as we don't have to shuffle.
+Suppose we have a join which needs to happen between a big table and a very small table. Rather than having to shuffle around a lot of data instead we could create copies of the small table and send a copy to each executor (we **broadcast** the small table to the executors).
 
 **Optimize:**
 
@@ -227,6 +219,18 @@ A command which compacts small files into larger ones.
 **Vacuum:**
 
 Clears out old logs of tables.
+
+--
+
+## Configuring broadcast joins:
+
+A question they like asking is about 
+
+> autoBroadcastJoinThreshold
+
+Any tables <= this size will automatically be broadcast during joins. The default is 10MB (10485760 bytes)
+
+This is just one of those things you have to know. (You don't need to know the default size, only that you manage it via autoBroadcastJoinThreshhold).
 
 ---
 
