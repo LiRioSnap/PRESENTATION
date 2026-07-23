@@ -50,11 +50,11 @@ There will usually be many executors and the driver node tells all of them what 
 
 The data will already have been partitioned before our job {.fragment}
 
---
+---
 
 ## Very high level analogy
 
-I am a CEO of a big (but very old fashioned) company. I want to know how many sales we made this year and need to report this to my shareholders.  I keep my data in log books on shelves in my office. There is a log book per product.  I have 3 employees, Jake, Yusuf, and Natthaya.
+I am a CEO of a big (but very old fashioned) company. I want to know how many sales we made this year and need to report this to my shareholders.  I keep my data in log books on shelves in my office. There is a log book per product.  I have 3 employees: Jake, Yusuf, and Natthaya.
 
 Imagine we have 90 products. It is too big a task for me to add all of them up myself. So I tell Jake to add up the total for the first 30 products. I tell Yusuf to add up the total for products 31-60 and Natthaya to add up the total for products 61-90.
 
@@ -94,7 +94,7 @@ As before they will each take partitions of products. At the end I get them to s
 
  > This is a Driver OOM
 
- The solution is to get a better, smarter more advanced CEO which can handle this data
+ The solution is to get a better, smarter more advanced CEO who can handle this data
 
  > In compute terms this means increasing the Driver memory.
 
@@ -199,19 +199,40 @@ Once every executor has computed its slice of `total_amount` per `product_id`, `
 
 **Useful for the exam:**
 
-> .collect() and .to_pandas() both send the data back to the driver node {.fragment}
+> .collect() and .toPandas() both send the data back to the driver node {.fragment}
 
-> If the exam talks about a memory issue and also either .collect() or .to_pandas() then think **Driver memory issue** {.fragment}
+> If the exam talks about a memory issue and also either .collect() or .toPandas() then think **Driver memory issue** {.fragment}
 
 ---
 
-## A query
+## Optimisations
 
-```python
-result = (
-    df.groupBy("product_id")
-        .count()
-        .collect()
-)
-```
+**Liquid clustering:**
+
+A predictive optimisation which updates clustering keys based on query patterns.
+
+
+**AQE (Adaptive Query Execution):**
+
+Databricks can change the way your queries execute when it thinks it could help. This includes switching to broadcast joins, repartitioning, and coalescing partitions. 
+
+**Broadcast joins:**
+
+Suppose we have a join which needs to happen between a big table and a very small table. Rather than having to shuffle around a lot of data instead we could create copies of the small table and send a copy to each executor (we **broadcast** the small table to the executors) this will speed up the join as we don't have to shuffle.
+
+**Optimize:**
+
+A command which compacts small files into larger ones.
+
+**Vacuum:**
+
+Clears out old logs of tables.
+
+---
+
+## Practice questions:
+
+[Databricks practice exam](https://snapanalytics.udemy.com/course/practice-exams-databricks-certified-data-engineer-associate/learn/quiz/5731990?kw=databricks&src=sac#overview)
+
+
 
