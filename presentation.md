@@ -67,11 +67,11 @@ Partitions won't get split between different executors. I.e. I will never get Ja
 
 ## Executor OOM
 
-Imagine one of my products sells a lot better than the others. We will have a lot more data for that product than any of the others. 
+Imagine one of my products sells a lot better than the others. Let's say it is product 37. We will have a lot more data for that product than any of the others. 
 
 > This is data skew.
 
-Suppose Yusuf has this partition as one of his partitions to do. Maybe he comes back to me and says this is simply too much stuff for him to do. 
+Yusuf has this partition as one of his partitions to do. Maybe he comes back to me and says this is simply too much stuff for him to do. 
 
 > This is an executor OOM.
 
@@ -240,6 +240,11 @@ In this case the task still completes but is just slower because it is reading a
 > If it is a severe case (massively over the size of data in memory) this is when we see an executor OOM.
 
 In this case the task fails and does not complete. We will then see an error message saying "Executor Lost".
+
+Since they are caused by the same problem both of these have the same fix:
+
+- Break partitions into smaller pieces
+- Increase executor memory
 
 
 ---
