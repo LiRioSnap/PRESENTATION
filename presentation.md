@@ -19,7 +19,7 @@ revealOptions:
     - What they are
     - High level analogy
     - Code based example
-- Storage vs Memory
+- Storage vs Memory {.fragment}
     - What they are
     - High level analogy (continued)
     - Technical details
