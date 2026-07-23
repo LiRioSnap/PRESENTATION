@@ -4,6 +4,9 @@ transition: "slide"
 customTheme: "presentation-theme"
 transitionSpeed: "slow"
 revealOptions:
+    width: 1600
+    height: 900
+    margin: 0.04
     center: false
 ---
 
@@ -29,9 +32,6 @@ revealOptions:
 - Working through an example {.fragment}
 - Past paper questions {.fragment}
 
-
-note: 
-The aim will be to go through these sections alongside some questions in order to get an understanding of troubleshooting, optimisation, and monitoring. Unfortunately we do have to understand a little bit about some technical parts in order to get our heads round this. In particular, we will need to learn about drivers, executors, and partitions. 
 ---
 
 ## How things work
@@ -54,17 +54,53 @@ The data will already have been partitioned before our job {.fragment}
 
 ## Very high level analogy
 
-I am a CEO of a big (but very old fashioned) company. I want to know how many sales we made this year and need to report this to my shareholders.  I keep my data in log books on shelves in my office. There is a log book per month.  I have 3 employees, Jake, Yusuf, and Natthaya
+I am a CEO of a big (but very old fashioned) company. I want to know how many sales we made this year and need to report this to my shareholders.  I keep my data in log books on shelves in my office. There is a log book per product.  I have 3 employees, Jake, Yusuf, and Natthaya.
 
-I tell Jake to add up the total for the first 4 months. I tell Yusuf to add up the total for months 5-8 and Natthaya to add up the total for months 9-12.
+Imagine we have 90 products. It is too big a task for me to add all of them up myself. So I tell Jake to add up the total for the first 30 products. I tell Yusuf to add up the total for products 31-60 and Natthaya to add up the total for products 61-90.
 
-> I am the driver
+> I am the driver. I don't actually do any of the tasks.
 
 > Jake, Yusuf, and Natthaya are my executors
 
-> Each log book (for a given week) is a partition
+> Each log book (for a given product) is a partition
 
-Each of my executors reports their number back to me. I add them up and report that number to my stakeholders.
+Partitions won't get split between different executors. I.e. I will never get Jake to do the total for some of the sales of product 1 and Natthaya to total the rest of product 1. 
+
+--
+
+## Executor OOM
+
+Imagine one of my products sells a lot better than the others. We will have a lot more data for that product than any of the others. 
+
+> This is data skew.
+
+Suppose Yusuf has this partition as one of his partitions to do. Maybe he comes back to me and says this is simply too much stuff for him to do. 
+
+> This is an executor OOM.
+
+Notice that adding more executors wouldn't help. Instead we would need to break the bigger partition down into smaller partitions
+
+> This is repartitioning
+
+--
+
+## Driver OOM
+
+Suppose I move my headquarters to Bermuda for "tax reasons". Rather than getting them to total things up I get Jake, Yusuf, and Natthaya to convert each sale for its value in Bermudian Dollars. 
+
+As before they will each take partitions of products. At the end I get them to send all this converted data back to me. 
+
+ This is a problem. Each partition is small enough for the executors to handle but at the end when I recombine all of the partitions it is too much data for **me** to handle. 
+
+ > This is a Driver OOM
+
+ The solution is to get a better, smarter more advanced CEO which can handle this data
+
+ > In compute terms this means increasing the Driver memory.
+
+
+
+
 
 ---
 
@@ -87,6 +123,11 @@ and a products table DIM_PRODUCTS
 | 1 | 1.70|
 | 2 | 3.65|
 |...|...|
+
+<br>
+</br>
+
+**Out of laziness we will assume that any order is an order of one item**
 
 --
 
@@ -114,9 +155,15 @@ Let's consider how this actually gets executed.
 
 --
 
-The data in the orders table will most likely be partitioned by ORDER_ID. The data in the product table will most likely be partitioned by PRODUCT_ID.
+> The data in the orders table will most likely be partitioned by ORDER_ID. 
 
-This means an order for `PRODUCT_ID = 2` and the row describing `PRODUCT_ID = 2` in `DIM_PRODUCTS` could easily sit on two different executors — Spark has no reason to have kept them together.
+<br>
+
+> The data in the product table will most likely be partitioned by PRODUCT_ID.
+
+<br>
+
+This means an order for PRODUCT_ID = 2 and the row describing PRODUCT_ID = 2 in DIM_PRODUCTS could easily sit on two different executors. Spark has no reason to have kept them together.
 
 --
 
@@ -124,9 +171,7 @@ This means an order for `PRODUCT_ID = 2` and the row describing `PRODUCT_ID = 2`
 
 To join on `product_id`, every row from both tables needs to be compared against rows with the same key. Spark can't do that if matching rows are scattered across different executors.
 
-So before the join can happen, Spark **shuffles** the data: it hashes `product_id` on both tables and redistributes rows across the cluster so that all rows sharing a `product_id` end up on the same executor.
-
-This is a network operation — data physically moves machine to machine. It's usually the most expensive part of a query like this.
+So before the join can happen, Spark **shuffles** the data: it redistributes rows across the cluster so that all rows sharing a `product_id` end up on the same executor.
 
 --
 
@@ -152,7 +197,12 @@ Either way — the driver isn't doing this work. It's the executors, exchanging 
 
 Once every executor has computed its slice of `total_amount` per `product_id`, `.collect()` tells them to send those results back to the driver, which assembles them into a single Python list.
 
-This only works because the *result* — one row per product — is small. If we tried to `.collect()` the joined `orders` + `products` table before aggregating, we'd be asking the driver to hold every order row in its own memory, which is a common way to crash a Spark job.
+**Useful for the exam:**
+
+> .collect() and .to_pandas() both send the data back to the driver node {.fragment}
+
+> If the exam talks about a memory issue and also either .collect() or .to_pandas() then think **Driver memory issue** {.fragment}
+
 ---
 
 ## A query
