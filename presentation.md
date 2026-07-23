@@ -19,6 +19,10 @@ revealOptions:
     - What they are
     - High level analogy
     - Code based example
+- Storage vs Memory
+    - What they are
+    - High level analogy (continued)
+    - Technical details
 - Basic optimisations {.fragment}
     - Liquid Clustering
     - AQE    
@@ -195,6 +199,48 @@ Once every executor has computed its slice of `total_amount` per `product_id`, `
 > .collect() and .toPandas() both send the data back to the driver node {.fragment}
 
 > If the exam talks about a memory issue and also either .collect() or .toPandas() then think **Driver memory issue** {.fragment}
+
+---
+
+## Storage vs Memory
+
+There two (terms and conditions apply) places that computers store data.
+
+> Storage is bigger and is used for long term storage of information but is slower to read and right from.
+
+<br>
+
+> Memory is smaller and is used for data currently being used and is faster to read and right from.
+
+--
+
+## High level analogy continued
+
+My company has continued to grow and I now have entire rooms filled with log books. I buy a warehouse (the physical kind) and put all of these log books on shelves in this warehouse. 
+
+Let's imagine my offices are upstairs from this warehouse. I still have Jake, Yusuf, and Natthaya working on all of my tasks for me. In order to help them out I buy a small set of shelves which live upstairs in the office where they work. This means they can store small amounts of log books that they are currently working on in the office. This saves them the time of having to walk downstairs and look for this information and keep bringing it back up and down from the warehouse.
+
+> The warehouse downstairs is storage (harddrive/disk)
+
+<br>
+
+> The small set of shelves in the office is memory (RAM)
+
+
+--
+
+## The technical details:
+
+Each executor has its own memory and storage. If an executor is working on a task involving too much data for its allocated memory it has two options.
+
+> If it is not too severe (in terms of size) then it can **spill** some of this data back into storage.
+
+In this case the task still completes but is just slower because it is reading and writing to storage (disk).
+
+> If it is a severe case (massively over the size of data in memory) this is when we see an executor OOM.
+
+In this case the task fails and does not complete. We will then see an error message saying "Executor Lost".
+
 
 ---
 
