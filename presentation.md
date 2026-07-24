@@ -290,4 +290,7 @@ This is just one of those things you have to know. (You don't need to know the d
 [Databricks practice exam](https://snapanalytics.udemy.com/course/practice-exams-databricks-certified-data-engineer-associate/learn/quiz/5731990?kw=databricks&src=sac#overview)
 
 
+**Btw: don't forget to do timesheets today as per mark's email**
+
+
 
